@@ -1,5 +1,5 @@
 
-
+import cv2
 import skimage.io as io
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,3 +48,70 @@ def showHist(img):
     imgHist = histogram(img, nbins=256)
     
     bar(imgHist[1].astype(np.uint8), imgHist[0], width=0.8, align='center')
+
+def rectContour(contours):
+    rectCon= []
+    for i in contours:
+        area= cv2.contourArea(i)
+        # print("Area",area)
+    
+
+        if area>200:
+            peri = cv2.arcLength(i, True)
+            approx = cv2.approxPolyDP(i,0.04*peri, True)
+
+            #print("Corner Points",len(approx))
+            if len(approx) == 4:
+                rectCon.append(i)
+                rectCon = sorted(rectCon, key= cv2.contourArea,reverse=True)
+
+    return rectCon  
+
+def getCornerPoints(cont):
+    peri = cv2.arcLength(cont, True)
+
+    approx = cv2.approxPolyDP(cont, 0.04 * peri, True)
+
+    return approx
+
+def reorder(myPoints):
+    myPoints = myPoints.reshape((4,2))
+    myPointsNew = np.zeros((4,1,2), np.int32)
+    add = myPoints.sum(1)
+    #print(myPoints)
+    #print(add)
+    myPointsNew[0]= myPoints[np.argmin(add)] # [0, 0]
+    myPointsNew[3]= myPoints[np.argmax(add)] # [w, h]
+    # myPointsNew[3][0] -= 2
+    diff = np.diff(myPoints,axis=1)
+    myPointsNew[1]= myPoints[np.argmin(diff)] # [w, 0]
+    # myPointsNew[1][0] -= 2
+    myPointsNew[2]= myPoints[np.argmax(diff)] # [0, h]
+    #print(diff)
+
+
+    return myPointsNew
+
+def getLowerBiggestContour(contours):
+    sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+    # Get the two largest contours
+    if len(sorted_contours) >= 2:
+        largest_two_contours = sorted_contours[:2]
+
+        # Step 2: Compute the vertical position of each contour
+        def get_vertical_position(contour):
+            # Compute the bounding box and return the y-coordinate of the bottom edge
+            _, _, _, y_bottom = cv2.boundingRect(contour)
+            return y_bottom
+
+        # Compare the two contours based on their vertical position
+        contour_1, contour_2 = largest_two_contours
+        if get_vertical_position(contour_1) > get_vertical_position(contour_2):
+            largest_contour = contour_1
+        else:
+            largest_contour = contour_2
+    else:
+        # Fallback if less than 2 contours exist
+        largest_contour = max(contours, key=cv2.contourArea) if contours else None
+    return largest_contour
