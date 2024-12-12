@@ -1,9 +1,10 @@
 from commonfunctions import *
 
 def get_edges(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.GaussianBlur(gray, (3, 3), 0.7)
-    edges = cv2.Canny(blurred, 50, 80)
+    blurred = cv2.GaussianBlur(image, (21, 21), 0.7)
+    gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
+    
+    edges = cv2.Canny(gray,50, 80)
 
     show_images([image, gray, blurred, edges], ['img', 'gray', 'blurred', 'edges'])
 
@@ -13,9 +14,10 @@ def getPerspective(img):
     imgContours = img.copy()
     imgCorners = img.copy()
     
+    
     edges = get_edges(img)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10))
 
     closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
 
@@ -28,7 +30,7 @@ def getPerspective(img):
 
     thirdBiggestRect = getCornerPoints(rectContours[2])
 
-    cv2.drawContours(imgCorners, thirdBiggestRect, -1, (0, 255, 0), 10)
+    cv2.drawContours(imgCorners, thirdBiggestRect, -1, (0, 255, 0), 50)
 
     thirdBiggestRect = reorder(thirdBiggestRect)
 
@@ -51,12 +53,12 @@ def getLines(full_paper):
 
     edges = borderTheImage(edges)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
-    closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=3)
+    closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=6)
 
     # Detect lines using the Hough Line Transform
-    lines = cv2.HoughLinesP(closed_edges, rho=0.001, theta=np.pi/180, threshold=100, minLineLength=400, maxLineGap=10)
+    lines = cv2.HoughLinesP(closed_edges, rho=1, theta=np.pi/180, threshold=100, minLineLength=2000, maxLineGap=50)
 
     horizontal_lines = []
     vertical_lines = []
@@ -68,8 +70,8 @@ def getLines(full_paper):
         elif abs(x1 - x2) < 10:  # Vertical line
             vertical_lines.append(line[0])
 
-    clustered_horizontal = cluster_lines(horizontal_lines, orientation='horizontal', threshold=10)
-    clustered_vertical = cluster_lines(vertical_lines, orientation='vertical', threshold=10)
+    clustered_horizontal = cluster_lines(full_paper, horizontal_lines, orientation='horizontal', threshold=10)
+    clustered_vertical = cluster_lines(full_paper, vertical_lines, orientation='vertical', threshold=10)
     clustered_lines = clustered_horizontal + clustered_vertical
 
 
@@ -89,12 +91,12 @@ def showLines(full_paper, horizontal_lines, vertical_lines, lines, clustered = 0
     if horizontal_lines is not None:
         for line in horizontal_lines:
             x1, y1, x2, y2 = line
-            cv2.line(horizontal, (x1, y1), (x2, y2), (0, 255, 0), 1)
+            cv2.line(horizontal, (x1, y1), (x2, y2), (0, 255, 0), 10)
 
     if vertical_lines is not None:
         for line in vertical_lines:
             x1, y1, x2, y2 = line
-            cv2.line(vertical, (x1, y1), (x2, y2), (0, 255, 0), 1)
+            cv2.line(vertical, (x1, y1), (x2, y2), (0, 255, 0), 10)
 
     # Draw detected lines
     if lines is not None:
@@ -103,7 +105,7 @@ def showLines(full_paper, horizontal_lines, vertical_lines, lines, clustered = 0
                 x1, y1, x2, y2 = line[0]
             else:
                 x1, y1, x2, y2 = line
-            cv2.line(output, (x1, y1), (x2, y2), (0, 255, 0), 1)
+            cv2.line(output, (x1, y1), (x2, y2), (0, 255, 0), 10)
     if (clustered == 0):
         show_images([horizontal, vertical, output], ["horizontal", "vertical", "lines"])
     else:
@@ -117,7 +119,7 @@ def borderTheImage(image, top = 3, bottom = 3, right = 5, left = 2):
     image[:, -right:] = 255  # Right border
     return image
 
-def cluster_lines(lines, orientation='horizontal', threshold=10, shifting = 2):
+def cluster_lines(full_paper, lines, orientation='horizontal', threshold=10, shifting = 2):
     """
     Cluster lines that are close to each other.
 
@@ -153,7 +155,8 @@ def cluster_lines(lines, orientation='horizontal', threshold=10, shifting = 2):
                 avg_y = int(np.mean([l[1] for l in cluster])) - shifting
                 x_start = min(l[0] for l in cluster)
                 x_end = max(l[2] for l in cluster)
-                clustered_lines.append([x_start, avg_y, x_end, avg_y])
+                # clustered_lines.append([x_start, avg_y, x_end, avg_y])
+                clustered_lines.append([0, avg_y, full_paper.shape[1] - 1, avg_y])
                 cluster = [line]
         else:
             # Compare x-coordinates
@@ -164,7 +167,8 @@ def cluster_lines(lines, orientation='horizontal', threshold=10, shifting = 2):
                 avg_x = int(np.mean([l[0] for l in cluster])) - shifting
                 y_start = min(l[1] for l in cluster)
                 y_end = max(l[3] for l in cluster)
-                clustered_lines.append([avg_x, y_start, avg_x, y_end])
+                # clustered_lines.append([avg_x, y_start, avg_x, y_end])
+                clustered_lines.append([avg_x, 0, avg_x, full_paper.shape[0] - 1])
                 cluster = [line]
     
     # Merge the last cluster
@@ -173,12 +177,14 @@ def cluster_lines(lines, orientation='horizontal', threshold=10, shifting = 2):
             avg_y = int(np.mean([l[1] for l in cluster])) - shifting
             x_start = min(l[0] for l in cluster)
             x_end = max(l[2] for l in cluster)
-            clustered_lines.append([x_start, avg_y, x_end, avg_y])
+            # clustered_lines.append([x_start, avg_y, x_end, avg_y])
+            clustered_lines.append([0, avg_y, full_paper.shape[1] - 1, avg_y])
         else:
             avg_x = int(np.mean([l[0] for l in cluster])) - shifting
             y_start = min(l[1] for l in cluster)
             y_end = max(l[3] for l in cluster)
-            clustered_lines.append([avg_x, y_start, avg_x, y_end])
+            # clustered_lines.append([avg_x, y_start, avg_x, y_end])
+            clustered_lines.append([avg_x, 0, avg_x, full_paper.shape[0] - 1])
     
     return clustered_lines
 
