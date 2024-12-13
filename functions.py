@@ -1,5 +1,12 @@
 from commonfunctions import *
 
+def get_edges_in_perspective(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0.7)
+    edges = cv2.Canny(blurred, 50, 120)
+
+    return edges
+
 def get_edges(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     blurred = cv2.GaussianBlur(gray, (3, 3), 0.7)
@@ -24,7 +31,10 @@ def getPerspective(img):
 
     cv2.drawContours(imgContours, rectContours, -1, (0, 255, 0), 2)
 
-    thirdBiggestRect = getCornerPoints(rectContours[2])
+    if (cv2.contourArea(rectContours[2]) > 600 * 600):
+        thirdBiggestRect = getCornerPoints(rectContours[2])
+    else:
+        thirdBiggestRect = getCornerPoints(rectContours[1])
 
     cv2.drawContours(imgCorners, thirdBiggestRect, -1, (0, 255, 0), 10)
 
@@ -43,7 +53,7 @@ def getPerspective(img):
     # show_images([img, gray, blurred], ['img', 'gray', 'blurred'])
     # show_images([edges, dilated_edges], ['edges', 'dilated_edges'])
     # show_images([imgContours,imgCorners], ['imgContours','imgCorners'])
-    # show_images([warped_img], ["warped"])
+    show_images([warped_img], ["warped"])
     return warped_img
 
 def getQuestions(full_paper):
@@ -61,7 +71,7 @@ def getQuestions(full_paper):
     print(edges.shape)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))
     vertically_closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=10)
-    show_images([full_paper,vertically_closed], ["full paper", "vertically_closed"])
+    #show_images([full_paper,vertically_closed], ["full paper", "vertically_closed"])
 
 
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (100, 5))
@@ -87,7 +97,7 @@ def getQuestions(full_paper):
 
     # SHOWING THE IMAGES FOR CLARITY 
 
-    show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
+    #show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
     return questions
 
 
