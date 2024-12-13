@@ -55,7 +55,7 @@ def getQuestions(full_paper):
     # Create a mask with zeros at the borders and ones elsewhere
     height,width = edges.shape
     border_mask = np.zeros((height, width), dtype=np.uint8)
-    border_mask[10:-10,10:-10] = 1  # Leave a 1-pixel border untouched
+    border_mask[15:-15,15:-15] = 1  # Leave a 1-pixel border untouched
 
     # Dilate the edges
     print(edges.shape)
@@ -64,17 +64,17 @@ def getQuestions(full_paper):
     show_images([full_paper,vertically_closed], ["full paper", "vertically_closed"])
 
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 5))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (100, 5))
     closed = cv2.morphologyEx(vertically_closed, cv2.MORPH_CLOSE, kernel, iterations=3)
 
 
     # # Apply the border mask to retain original borders
     closed_paper = np.where(border_mask, closed, edges)
 
-    closed_paper[:10,:] = 0
-    closed_paper[-10:, :] = 0
-    closed_paper[:, :10] = 0
-    closed_paper[:, -10:] = 0
+    closed_paper[:15,:] = 0
+    closed_paper[-15:, :] = 0
+    closed_paper[:, :15] = 0
+    closed_paper[:, -15:] = 0
     paper_contours, _ = cv2.findContours(closed_paper, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     # paper_rectContours = rectContour(paper_contours)
     cv2.drawContours(full_paper_contours, paper_contours, -1, (0, 255, 0), 3)
