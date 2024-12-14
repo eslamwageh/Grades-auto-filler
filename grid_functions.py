@@ -1,5 +1,6 @@
 from commonfunctions import *
 from joblib import dump, load
+import pytesseract
 
 def get_edges(image):
     blurred = cv2.GaussianBlur(image, (21, 21), 0.7)
@@ -44,9 +45,9 @@ def getPerspective(img):
 
 
     # SHOWING THE IMAGES FOR CLARITY 
-    show_images([closed_edges], ['closed_edges'])
-    show_images([imgContours,imgCorners], ['imgContours','imgCorners'])
-    show_images([warped_img], ["warped"])
+    # show_images([closed_edges], ['closed_edges'])
+    # show_images([imgContours,imgCorners], ['imgContours','imgCorners'])
+    # show_images([warped_img], ["warped"])
     return warped_img
 
 def getLines(full_paper):
@@ -77,10 +78,10 @@ def getLines(full_paper):
 
 
 
-    show_images([closed_edges], ["closed edges"])
+    # show_images([closed_edges], ["closed edges"])
 
-    showLines(full_paper, horizontal_lines, vertical_lines, lines, 0)
-    showLines(full_paper, clustered_horizontal, clustered_vertical, clustered_lines, 1)
+    # showLines(full_paper, horizontal_lines, vertical_lines, lines, 0)
+    # showLines(full_paper, clustered_horizontal, clustered_vertical, clustered_lines, 1)
 
     return clustered_horizontal, clustered_vertical
 
@@ -216,14 +217,14 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
             # Crop the cell from the original image
             cell = full_paper[y1:y2, x1:x2]
             row_cells.append(cell)
-            show_images([cell], [f"{i}, {j}"])
+            #show_images([cell], [f"{i}, {j}"])
         cells.append(row_cells)
     
     print(f"Extracted {len(cells) * len(cells[0])} cells.")
     return cells
     
 
-def predictCells(cells, digits_models, symbols_models):
+def predictCells(cells, digits_models, symbols_models, selected_method):
     for row_cells in cells:
         for i in range(len(row_cells)):
             height, width = row_cells[i].shape[:2]
@@ -235,11 +236,37 @@ def predictCells(cells, digits_models, symbols_models):
             # Crop the image
             cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
             show_images([cropped_cell],["cropped cell"])
-            if (i == 3):
+            if (i == 0):
+                predictID(row_cells[i], selected_method)
+            elif (i == 3):
                 print(f"The digit predicted is: {predict_digit(cropped_cell, digits_models)}")
             elif (i > 3):
                 print(f"The symbol predicted is: {predict_symbol(cropped_cell, symbols_models)}")
 
+
+def predictID(img, selected_method):
+    if (selected_method == "OCR"):
+        print ("OCR is not installed :(")
+        # print(f"The ID predicted is: {ocr_pytesseract_number_extraction_default(row_cells[i])}")
+    else:
+        show_images([img], ["img"])
+        id_contours_img = img.copy()
+
+        edges = get_edges(img)
+        edges = borderTheImage(edges, 12, 12, 12, 12)
+        id_contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        # paper_rectContours = rectContour(paper_contours)
+        cv2.drawContours(id_contours_img, id_contours, -1, (0, 255, 0), 1)
+
+        show_images([id_contours_img], ["id contours"])
+
+        x, y, w, h = cv2.boundingRect(id_contours[0])
+        questions = img[y:y+h, x:x+w] 
+
+        # SHOWING THE IMAGES FOR CLARITY 
+
+        # show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
+        show_images([edges, questions], ["edges","questions"])
 
 
 ############################################# CLASSIFICATON FUNCTIONS ##################################
@@ -297,6 +324,16 @@ def predict_digit(img, digits_models):
     return predicted_digit_num
 
 
+
+
+########################################## OCR FUNCTIONS ##############################################
+
+
+def ocr_pytesseract_number_extraction_default(image):
+    # Open the image using Pillow
+    #you can remove the config to detect the text if you want but we only using it for digits detection
+    extracted_text = pytesseract.image_to_string(image, config='--psm 6 -c tessedit_char_whitelist=0123456789')
+    return extracted_text
 
 # def find_intersections(horizontal, vertical):
 #     """
