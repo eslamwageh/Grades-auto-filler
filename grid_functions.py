@@ -226,10 +226,19 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
 def predictCells(cells, digits_models, symbols_models):
     for row_cells in cells:
         for i in range(len(row_cells)):
+            height, width = row_cells[i].shape[:2]
+            start_x = (width - 150) // 2
+            start_y = (height - 150) // 2
+            end_x = start_x + 150
+            end_y = start_y + 150
+
+            # Crop the image
+            cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
+            show_images([cropped_cell],["cropped cell"])
             if (i == 3):
-                print(f"The digit predicted is: {predict_digit(row_cells[i], digits_models)}")
+                print(f"The digit predicted is: {predict_digit(cropped_cell, digits_models)}")
             elif (i > 3):
-                print(f"The symbol predicted is: {predict_symbol(row_cells[i], symbols_models)}")
+                print(f"The symbol predicted is: {predict_symbol(cropped_cell, symbols_models)}")
 
 
 
