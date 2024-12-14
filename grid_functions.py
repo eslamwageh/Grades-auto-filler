@@ -1,4 +1,5 @@
 from commonfunctions import *
+from joblib import dump, load
 
 def get_edges(image):
     blurred = cv2.GaussianBlur(image, (21, 21), 0.7)
@@ -221,6 +222,70 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
     print(f"Extracted {len(cells) * len(cells[0])} cells.")
     return cells
     
+
+def predictCells(cells, digits_models, symbols_models):
+    for row_cells in cells:
+        for i in range(len(row_cells)):
+            if (i == 3):
+                print(f"The digit predicted is: {predict_digit(row_cells[i], digits_models)}")
+            elif (i > 3):
+                print(f"The symbol predicted is: {predict_symbol(row_cells[i], symbols_models)}")
+
+
+
+############################################# CLASSIFICATON FUNCTIONS ##################################
+
+def extract_hog_features(img):
+    """
+    Extracts Histogram of Oriented Gradients (HOG) features from the input image.
+    This involves resizing the image to a fixed size, dividing it into cells and blocks, 
+    computing gradient histograms, and flattening the result into a feature vector. 
+    The extracted features are useful for machine learning tasks like image classification and detection.
+    """
+    target_img_size = (128, 128)
+    img = cv2.resize(img, dsize=target_img_size)
+    win_size = (128, 128) 
+    cell_size = (16, 16) #Divides the window into smaller cells (4x4 pixels per cell).
+    block_size_in_cells = (8, 8) 
+
+    # divides window to blocks then blocks to cells
+    block_size = (block_size_in_cells[1] * cell_size[1], block_size_in_cells[0] * cell_size[0])
+    block_stride = (cell_size[1], cell_size[0]) #Determines how much the block moves at each step (4x4 pixels, matching cell size).
+    nbins = 9  # Number of orientation bins
+    hog = cv2.HOGDescriptor(win_size, block_size, block_stride, cell_size, nbins)
+    h = hog.compute(img)
+    h = h.flatten()
+    return h.flatten() #This array is used as input for machine learning models.
+
+def load_model():
+    # Load the digits models dictionary
+    loaded_digits_models = load('digits_models.joblib')
+    print('Loaded digits models from digits_models.joblib')
+    print(loaded_digits_models)
+
+    # Load the symbols models dictionary
+    loaded_symbols_models = load('symbols_models.joblib')
+    print('Loaded symbols models from symbols_models.joblib')
+
+    # Return the loaded models
+    return loaded_digits_models, loaded_symbols_models
+    
+
+    
+def predict_symbol(img, symbols_models):
+
+    test_features=extract_hog_features(img)
+    predicted_symbol=symbols_models['SVM'].predict([test_features])
+    return predicted_symbol
+
+
+
+def predict_digit(img, digits_models):
+    test_features=extract_hog_features(img)
+    predicted_digit=digits_models['SVM'].predict([test_features])
+    predicted_digit_num = ord(predicted_digit[0].lower()) - ord('a') + 1
+    
+    return predicted_digit_num
 
 
 
