@@ -53,7 +53,7 @@ def getPerspective(img):
     # show_images([img, gray, blurred], ['img', 'gray', 'blurred'])
     # show_images([edges, dilated_edges], ['edges', 'dilated_edges'])
     # show_images([imgContours,imgCorners], ['imgContours','imgCorners'])
-    show_images([warped_img], ["warped"])
+    #show_images([warped_img], ["warped"])
     return warped_img
 
 def getQuestions(full_paper):
@@ -68,7 +68,7 @@ def getQuestions(full_paper):
     border_mask[15:-15,15:-15] = 1  # Leave a 1-pixel border untouched
 
     # Dilate the edges
-    print(edges.shape)
+    #print(edges.shape)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))
     vertically_closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=10)
     #show_images([full_paper,vertically_closed], ["full paper", "vertically_closed"])
