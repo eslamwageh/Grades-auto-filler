@@ -1,3 +1,5 @@
-/digits_dataset
-/symbols_dataset
-/Bubble_sheet
+Bubble_sheet/
+Grid/
+test_dataset/
+digits_dataset
+symbols_dataset
