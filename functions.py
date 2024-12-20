@@ -97,7 +97,7 @@ def getQuestions(full_paper):
 
     # SHOWING THE IMAGES FOR CLARITY 
 
-    #show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
+    # show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
     return questions
 
 
