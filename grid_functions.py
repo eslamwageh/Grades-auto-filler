@@ -2,9 +2,9 @@ from commonfunctions import *
 from joblib import dump, load
 import pytesseract
 from openpyxl.styles import PatternFill
-import easyocr
+# import easyocr
 
-reader = easyocr.Reader(['en'])
+# reader = easyocr.Reader(['en'])
 
 
 def get_edges(image):
@@ -113,10 +113,10 @@ def showLines(full_paper, horizontal_lines, vertical_lines, lines, clustered = 0
             else:
                 x1, y1, x2, y2 = line
             cv2.line(output, (x1, y1), (x2, y2), (0, 255, 0), 10)
-    # if (clustered == 0):
-    #     show_images([horizontal, vertical, output], ["horizontal", "vertical", "lines"])
-    # else:
-    #     show_images([horizontal, vertical, output], ["clustered horizontal", "clustered vertical", "clustered lines"])
+    if (clustered == 0):
+        show_images([horizontal, vertical, output], ["horizontal", "vertical", "lines"])
+    else:
+        show_images([horizontal, vertical, output], ["clustered horizontal", "clustered vertical", "clustered lines"])
 
 def borderTheImage(image, top = 3, bottom = 3, right = 5, left = 2):
     # Fill the borders with ones
@@ -126,7 +126,7 @@ def borderTheImage(image, top = 3, bottom = 3, right = 5, left = 2):
     image[:, -right:] = 255  # Right border
     return image
 
-def cluster_lines(full_paper, lines, orientation='horizontal', threshold=10, shifting = 2):
+def cluster_lines(full_paper, lines, orientation='horizontal', threshold=10, shifting = 0):
     """
     Cluster lines that are close to each other.
 
@@ -207,7 +207,7 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
     print(f"Table has {num_rows} rows and {num_cols} columns.")
 
     cells = []
-
+    print(clustered_vertical[0])
     for i in range(num_rows):
         row_cells = []
         for j in range(num_cols):
@@ -219,10 +219,11 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
             x2 = clustered_vertical[j + 1][0]
             y2 = clustered_horizontal[i + 1][1]
             
+            print (x1, y1, x2, y2)
             # Crop the cell from the original image
             cell = full_paper[y1:y2, x1:x2]
             row_cells.append(cell)
-            #show_images([cell], [f"{i}, {j}"])
+            # show_images([cell], [f"{i}, {j}"])
         cells.append(row_cells)
     
     print(f"Extracted {len(cells) * len(cells[0])} cells.")
@@ -307,6 +308,27 @@ def predictCells(cells, digits_models, symbols_models, selected_method, sheet):
                 cell.value = ""  # Set cell value to empty
 
 
+def preprocessIDDigit(digit_img):
+    # Find the brightest color in the image
+    brightest_color = digit_img[0, 0]  # Max across rows and columns for each channel
+
+    # Create a new blank image of size (70, 70) filled with the brightest color
+    result_img = np.full((70, 70, 3), brightest_color, dtype=np.uint8)
+
+    # Resize the digit image while maintaining its aspect ratio
+    digit_h, digit_w = digit_img.shape[:2]
+    scale = min(70 / digit_h, 70 / digit_w)
+    new_w, new_h = int(digit_w * scale), int(digit_h * scale)
+    resized_digit = cv2.resize(digit_img, (new_w, new_h))
+
+    # Calculate the offset to center the digit
+    x_offset = (70 - new_w) // 2
+    y_offset = (70 - new_h) // 2
+
+    # Place the resized digit in the center of the result image
+    result_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_digit
+    return result_img
+
 def predictID(img, selected_method, digits_models):
     result = ""
     if (selected_method == "OCR"):
@@ -323,13 +345,15 @@ def predictID(img, selected_method, digits_models):
         
         edges = cv2.Canny(gray,60, 100)
 
-        edges[ : 15, :] = 0
-        edges[-15: , :] = 0
-        edges[:, :15] = 0
-        edges[:, -15:] = 0
+        edges[ : 18, :] = 0
+        edges[-18: , :] = 0
+        edges[:, :18] = 0
+        edges[:, -18:] = 0
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 20))
+        closed_edges = cv2.morphologyEx(closed_edges, cv2.MORPH_CLOSE, kernel, iterations=1)
 
         # show_images([img, gray, blurred, edges, closed_edges], ['img', 'gray', 'blurred', 'edges', 'closed_edges'])
 
@@ -337,7 +361,7 @@ def predictID(img, selected_method, digits_models):
         # edges = borderTheImage(edges, 12, 12, 12, 12)
 
         
-        id_contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        id_contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         # paper_rectContours = rectContour(paper_contours)
         cv2.drawContours(id_contours_img, id_contours, -1, (0, 255, 0), 1)
 
@@ -347,35 +371,39 @@ def predictID(img, selected_method, digits_models):
 
         for i, contour in enumerate(id_contours):
             x, y, w, h = cv2.boundingRect(contour)
-            digit_img = img[y:y+h, x:x+w]
+            area  = cv2.contourArea(contour)
+            print(f"area  = {area}")
+            if (area < 200):    
+                continue
 
+            if (h < 1.5 * w):
+                digit_img1 = img[y:y+h, x:x+w//2]
+                digit_img2 = img[y:y+h, x+w//2:x+w]
 
-            # Find the brightest color in the image
-            brightest_color = digit_img[0, 0]  # Max across rows and columns for each channel
+                result_img = preprocessIDDigit(digit_img1)
+                predicted_digit = predict_digit(result_img, digits_models, selected_method)
+                if predicted_digit == 10:
+                    predicted_digit = 0
+                print(f"The digit predicted is: {predicted_digit}")
+                result += str(predicted_digit)
 
-            # Create a new blank image of size (70, 70) filled with the brightest color
-            result_img = np.full((70, 70, 3), brightest_color, dtype=np.uint8)
+                result_img = preprocessIDDigit(digit_img2)
+                predicted_digit = predict_digit(result_img, digits_models, selected_method)
+                if predicted_digit == 10:
+                    predicted_digit = 0
+                print(f"The digit predicted is: {predicted_digit}")
+                result += str(predicted_digit)
 
-            # Resize the digit image while maintaining its aspect ratio
-            digit_h, digit_w = digit_img.shape[:2]
-            scale = min(70 / digit_h, 70 / digit_w)
-            new_w, new_h = int(digit_w * scale), int(digit_h * scale)
-            resized_digit = cv2.resize(digit_img, (new_w, new_h))
+            else :
+                digit_img1 = img[y:y+h, x:x+w]
 
-            # Calculate the offset to center the digit
-            x_offset = (70 - new_w) // 2
-            y_offset = (70 - new_h) // 2
-
-            # Place the resized digit in the center of the result image
-            result_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_digit
-
-            predicted_digit = predict_digit(result_img, digits_models, selected_method)
-            if predicted_digit == 10:
-                predicted_digit = 0
-            print(f"The digit predicted is: {predicted_digit}")
-
-            result += str(predicted_digit)
-
+                result_img = preprocessIDDigit(digit_img1)
+                predicted_digit = predict_digit(result_img, digits_models, selected_method)
+                if predicted_digit == 10:
+                    predicted_digit = 0
+                print(f"The digit predicted is: {predicted_digit}")
+                result += str(predicted_digit)
+            
             # Display the resulting image
             # show_images([result_img], [f"Digit {i+1}"])
             # show_images([digit_img], [f"Digit {i+1}"])
@@ -430,13 +458,14 @@ def predict_symbol(img, symbols_models):
 
 
 def predict_digit(img, digits_models, selected_method):
+    # show_images([img], ['img'])
     if (selected_method == "OCR"):
         print ("OCR is not installed :(")
         return ocr_pytesseract_number_extraction_default(img);
     else:
         test_features=extract_hog_features(img)
         predicted_digit=digits_models['SVM'].predict([test_features])
-        predicted_digit_num = ord(predicted_digit[0].lower()) - ord('a') + 1
+        predicted_digit_num = predicted_digit[0]
     
     return predicted_digit_num
 
