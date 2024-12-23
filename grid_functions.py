@@ -2,6 +2,10 @@ from commonfunctions import *
 from joblib import dump, load
 import pytesseract
 from openpyxl.styles import PatternFill
+import easyocr
+
+reader = easyocr.Reader(['en'])
+
 
 def get_edges(image):
     blurred = cv2.GaussianBlur(image, (21, 21), 0.7)
@@ -307,7 +311,7 @@ def predictID(img, selected_method, digits_models):
     result = ""
     if (selected_method == "OCR"):
         result = ocr_pytesseract_number_extraction_default(img)
-        print ("OCR is not installed :(")
+        # print ("OCR is not installed :(")
         print(f"The ID predicted is: {result}")
 
     else:
@@ -428,7 +432,7 @@ def predict_symbol(img, symbols_models):
 def predict_digit(img, digits_models, selected_method):
     if (selected_method == "OCR"):
         print ("OCR is not installed :(")
-        return ocr_pytesseract_number_extraction(img);
+        return ocr_pytesseract_number_extraction_default(img);
     else:
         test_features=extract_hog_features(img)
         predicted_digit=digits_models['SVM'].predict([test_features])
@@ -445,10 +449,22 @@ def predict_digit(img, digits_models, selected_method):
 def ocr_pytesseract_number_extraction_default(image):
     # Open the image using Pillow
     #you can remove the config to detect the text if you want but we only using it for digits detection
-    extracted_text = pytesseract.image_to_string(image, config='--psm 6 -c tessedit_char_whitelist=0123456789')
-    return extracted_text
+    # show_images([image],['ocr image'])
+    # extracted_text = pytesseract.image_to_string(image, config='--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789')
+    # Create an OCR reader object
+
+
+    # Read text from an image
+    result = reader.readtext(image)
+
+    # Print the extracted text
+    for detection in result:
+        print(detection[1])
+    return detection[1]
 
 def ocr_pytesseract_number_extraction(img):
+    show_images([img],['ocr digit image'])
+
     if img is None:
         print("Error: Unable to load the image.")
         return None
