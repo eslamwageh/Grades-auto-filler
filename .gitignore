@@ -2,5 +2,6 @@ Bubble_sheet/
 Grid/
 test_dataset/
 digits_dataset
+digits_dataset2/
 symbols_dataset
 __pycache__
