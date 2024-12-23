@@ -228,45 +228,101 @@ def predictCells(cells, digits_models, symbols_models, selected_method):
     for row_cells in cells:
         for i in range(len(row_cells)):
             height, width = row_cells[i].shape[:2]
-            start_x = (width - 150) // 2
-            start_y = (height - 150) // 2
-            end_x = start_x + 150
-            end_y = start_y + 150
-
-            # Crop the image
-            cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
-            show_images([cropped_cell],["cropped cell"])
+           
             if (i == 0):
-                predictID(row_cells[i], selected_method)
+                predictID(row_cells[i], selected_method, digits_models)
             elif (i == 3):
-                print(f"The digit predicted is: {predict_digit(cropped_cell, digits_models)}")
+                start_x = (width - 140) // 2
+                start_y = (height - 125) // 2
+                end_x = start_x + 120
+                end_y = start_y + 125
+
+                # Crop the image
+                cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
+                show_images([cropped_cell],["cropped cell"])
+
+                print(f"The digit predicted is: {predict_digit(cropped_cell, digits_models, selected_method)}")
             elif (i > 3):
+                start_x = (width - 250) // 2
+                start_y = (height - 150) // 2
+                end_x = start_x + 250
+                end_y = start_y + 150
+
+                # Crop the image
+                cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
+                show_images([cropped_cell],["cropped cell"])
+
                 print(f"The symbol predicted is: {predict_symbol(cropped_cell, symbols_models)}")
 
 
-def predictID(img, selected_method):
+def predictID(img, selected_method, digits_models):
     if (selected_method == "OCR"):
         print ("OCR is not installed :(")
-        # print(f"The ID predicted is: {ocr_pytesseract_number_extraction_default(row_cells[i])}")
+        print(f"The ID predicted is: {ocr_pytesseract_number_extraction_default(img)}")
     else:
         show_images([img], ["img"])
         id_contours_img = img.copy()
 
-        edges = get_edges(img)
-        edges = borderTheImage(edges, 12, 12, 12, 12)
-        id_contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        blurred = cv2.GaussianBlur(img, (11, 11), 2)
+        gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
+        
+        edges = cv2.Canny(gray,60, 100)
+
+        edges[ : 15, :] = 0
+        edges[-15: , :] = 0
+        edges[:, :15] = 0
+        edges[:, -15:] = 0
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
+        closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+        show_images([img, gray, blurred, edges, closed_edges], ['img', 'gray', 'blurred', 'edges', 'closed_edges'])
+
+        # edges = get_edges(img)
+        # edges = borderTheImage(edges, 12, 12, 12, 12)
+
+        
+        id_contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         # paper_rectContours = rectContour(paper_contours)
         cv2.drawContours(id_contours_img, id_contours, -1, (0, 255, 0), 1)
 
+        id_contours = sorted(id_contours, key=lambda contour: cv2.boundingRect(contour)[0])
+
         show_images([id_contours_img], ["id contours"])
 
-        x, y, w, h = cv2.boundingRect(id_contours[0])
-        questions = img[y:y+h, x:x+w] 
 
-        # SHOWING THE IMAGES FOR CLARITY 
+        for i, contour in enumerate(id_contours):
+            x, y, w, h = cv2.boundingRect(contour)
+            digit_img = img[y:y+h, x:x+w]
 
-        # show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
-        show_images([edges, questions], ["edges","questions"])
+
+            # Find the brightest color in the image
+            brightest_color = digit_img[0, 0]  # Max across rows and columns for each channel
+
+            # Create a new blank image of size (70, 70) filled with the brightest color
+            result_img = np.full((70, 70, 3), brightest_color, dtype=np.uint8)
+
+            # Resize the digit image while maintaining its aspect ratio
+            digit_h, digit_w = digit_img.shape[:2]
+            scale = min(70 / digit_h, 70 / digit_w)
+            new_w, new_h = int(digit_w * scale), int(digit_h * scale)
+            resized_digit = cv2.resize(digit_img, (new_w, new_h))
+
+            # Calculate the offset to center the digit
+            x_offset = (70 - new_w) // 2
+            y_offset = (70 - new_h) // 2
+
+            # Place the resized digit in the center of the result image
+            result_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_digit
+
+            predicted_digit = predict_digit(result_img, digits_models, selected_method)
+            if predicted_digit == 10:
+                predicted_digit = 0
+            print(f"The digit predicted is: {predicted_digit}")
+
+            # Display the resulting image
+            show_images([result_img], [f"Digit {i+1}"])
+            show_images([digit_img], [f"Digit {i+1}"])
 
 
 ############################################# CLASSIFICATON FUNCTIONS ##################################
@@ -316,10 +372,14 @@ def predict_symbol(img, symbols_models):
 
 
 
-def predict_digit(img, digits_models):
-    test_features=extract_hog_features(img)
-    predicted_digit=digits_models['SVM'].predict([test_features])
-    predicted_digit_num = ord(predicted_digit[0].lower()) - ord('a') + 1
+def predict_digit(img, digits_models, selected_method):
+    if (selected_method == "OCR"):
+        print ("OCR is not installed :(")
+        return ocr_pytesseract_number_extraction(img);
+    else:
+        test_features=extract_hog_features(img)
+        predicted_digit=digits_models['SVM'].predict([test_features])
+        predicted_digit_num = ord(predicted_digit[0].lower()) - ord('a') + 1
     
     return predicted_digit_num
 
@@ -334,6 +394,34 @@ def ocr_pytesseract_number_extraction_default(image):
     #you can remove the config to detect the text if you want but we only using it for digits detection
     extracted_text = pytesseract.image_to_string(image, config='--psm 6 -c tessedit_char_whitelist=0123456789')
     return extracted_text
+
+def ocr_pytesseract_number_extraction(img):
+    if img is None:
+        print("Error: Unable to load the image.")
+        return None
+
+    # Ensure the image is in grayscale format
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        # Convert color image to grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    elif len(img.shape) == 2:
+        # Already in grayscale, no need to convert
+        gray = img
+    else:
+        print("Error: Invalid image format.")
+        return None
+
+
+    # Apply thresholding to the grayscale image to improve OCR accuracy for images with inconsistent lighting or low contrast.
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+
+    # custom configurations for single digits outputs
+    # --psm 10 (for single character recognition)
+    custom_config = r'--oem 3 --psm 10 outputbase digits'
+    text = pytesseract.image_to_string(binary, config=custom_config)
+
+    return text
+
 
 # def find_intersections(horizontal, vertical):
 #     """
