@@ -12,15 +12,13 @@ def get_edges(image):
     blurred = cv2.GaussianBlur(gray, (3, 3), 0.7)
     edges = cv2.Canny(blurred, 50, 120)
 
-    # show_images([image, gray, blurred, edges], ['img', 'gray', 'blurred', 'edges'])
-
     return edges
 
 def getPerspective(img):
     imgContours = img.copy()
     imgCorners = img.copy()
     
-    edges = get_edges_in_perspective(img)
+    edges = get_edges(img)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
@@ -52,10 +50,10 @@ def getPerspective(img):
 
     # SHOWING THE IMAGES FOR CLARITY 
 
-    
+    # show_images([img, gray, blurred], ['img', 'gray', 'blurred'])
     # show_images([edges, dilated_edges], ['edges', 'dilated_edges'])
     # show_images([imgContours,imgCorners], ['imgContours','imgCorners'])
-    show_images([warped_img], ["warped"])
+    #show_images([warped_img], ["warped"])
     return warped_img
 
 def getQuestions(full_paper):
@@ -70,10 +68,10 @@ def getQuestions(full_paper):
     border_mask[15:-15,15:-15] = 1  # Leave a 1-pixel border untouched
 
     # Dilate the edges
-    print(edges.shape)
+    #print(edges.shape)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))
     vertically_closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=10)
-    # show_images([full_paper,vertically_closed], ["full paper", "vertically_closed"])
+    #show_images([full_paper,vertically_closed], ["full paper", "vertically_closed"])
 
 
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (100, 5))
@@ -100,56 +98,4 @@ def getQuestions(full_paper):
     # SHOWING THE IMAGES FOR CLARITY 
 
     # show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
-    show_images([closed, questions], ["closed","questions"])
     return questions
-
-
-
-# def getID(full_paper):
-#     full_paper_contours = full_paper.copy()
-#     full_paper_largest_contour = full_paper.copy()
-
-#     gray = cv2.cvtColor(full_paper, cv2.COLOR_RGB2GRAY)
-#     blurred = cv2.GaussianBlur(gray, (3, 3), 0.7)
-#     edges = cv2.Canny(blurred, 50, 120)
-
-
-#     # Create a mask with zeros at the borders and ones elsewhere
-#     height,width = edges.shape
-#     border_mask = np.zeros((height, width), dtype=np.uint8)
-#     border_mask[10:-10,10:-10] = 1  # Leave a 1-pixel border untouched
-
-#     # Dilate the edges
-#     print(edges.shape)
-#     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))
-#     vertically_closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=10)
-#     show_images([vertically_closed], ["vertically_closed"])
-
-
-#     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 5))
-#     closed = cv2.morphologyEx(vertically_closed, cv2.MORPH_CLOSE, kernel, iterations=3)
-
-
-
-#     # # Apply the border mask to retain original borders
-#     closed_paper = np.where(border_mask, closed, edges)
-
-#     closed_paper[:10,:] = 0
-#     closed_paper[-10:, :] = 0
-#     closed_paper[:, :10] = 0
-#     closed_paper[:, -10:] = 0
-#     paper_contours, _ = cv2.findContours(closed_paper, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#     # paper_rectContours = rectContour(paper_contours)
-#     cv2.drawContours(full_paper_contours, paper_contours, -1, (0, 255, 0), 3)
-#     # paper_largest_contour = paper_rectContours[0]
-#     paper_largest_contour = getLowerBiggestContour(paper_contours)
-#     cv2.drawContours(full_paper_largest_contour, [paper_largest_contour], -1, (0, 255, 0), 3)
-
-
-#     x, y, w, h = cv2.boundingRect(paper_largest_contour)
-#     questions = full_paper[y:y+h, x:x+w] 
-
-#     # SHOWING THE IMAGES FOR CLARITY 
-
-#     show_images([edges, closed_paper, full_paper_contours, full_paper_largest_contour, questions], ["edges","closed", "contours", "largest_contour", "questions"])
-#     return questions
