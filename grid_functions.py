@@ -1,6 +1,7 @@
 from commonfunctions import *
 from joblib import dump, load
 import pytesseract
+from openpyxl.styles import PatternFill
 
 def get_edges(image):
     blurred = cv2.GaussianBlur(image, (21, 21), 0.7)
@@ -8,7 +9,7 @@ def get_edges(image):
     
     edges = cv2.Canny(gray,50, 80)
 
-    show_images([image, gray, blurred, edges], ['img', 'gray', 'blurred', 'edges'])
+    # show_images([image, gray, blurred, edges], ['img', 'gray', 'blurred', 'edges'])
 
     return edges
 
@@ -108,10 +109,10 @@ def showLines(full_paper, horizontal_lines, vertical_lines, lines, clustered = 0
             else:
                 x1, y1, x2, y2 = line
             cv2.line(output, (x1, y1), (x2, y2), (0, 255, 0), 10)
-    if (clustered == 0):
-        show_images([horizontal, vertical, output], ["horizontal", "vertical", "lines"])
-    else:
-        show_images([horizontal, vertical, output], ["clustered horizontal", "clustered vertical", "clustered lines"])
+    # if (clustered == 0):
+    #     show_images([horizontal, vertical, output], ["horizontal", "vertical", "lines"])
+    # else:
+    #     show_images([horizontal, vertical, output], ["clustered horizontal", "clustered vertical", "clustered lines"])
 
 def borderTheImage(image, top = 3, bottom = 3, right = 5, left = 2):
     # Fill the borders with ones
@@ -224,13 +225,18 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
     return cells
     
 
-def predictCells(cells, digits_models, symbols_models, selected_method):
+def predictCells(cells, digits_models, symbols_models, selected_method, sheet):
+    # Define red fill
+    red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+
     for row_cells in cells:
+        result_id = ""
+        answers = []
         for i in range(len(row_cells)):
             height, width = row_cells[i].shape[:2]
-           
+
             if (i == 0):
-                predictID(row_cells[i], selected_method, digits_models)
+                result_id = predictID(row_cells[i], selected_method, digits_models)
             elif (i == 3):
                 start_x = (width - 140) // 2
                 start_y = (height - 125) // 2
@@ -239,7 +245,9 @@ def predictCells(cells, digits_models, symbols_models, selected_method):
 
                 # Crop the image
                 cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
-                show_images([cropped_cell],["cropped cell"])
+                # show_images([cropped_cell],["cropped cell"])
+                current_answer = predict_digit(cropped_cell, digits_models, selected_method)
+                answers.append(current_answer)
 
                 print(f"The digit predicted is: {predict_digit(cropped_cell, digits_models, selected_method)}")
             elif (i > 3):
@@ -250,17 +258,60 @@ def predictCells(cells, digits_models, symbols_models, selected_method):
 
                 # Crop the image
                 cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
-                show_images([cropped_cell],["cropped cell"])
+                # show_images([cropped_cell],["cropped cell"])
 
-                print(f"The symbol predicted is: {predict_symbol(cropped_cell, symbols_models)}")
+                result = None
+                symbol = predict_symbol(cropped_cell, symbols_models)
+                match symbol:
+                    case 'check':
+                        result = 5
+                    case 'empty':
+                        result = ""
+                    case 'vertical1':
+                        result = 1
+                    case 'vertical2':
+                        result = 2
+                    case 'vertical3':
+                        result = 3
+                    case 'vertical4':
+                        result = 4
+                    case 'vertical5':
+                        result = 5
+                    case 'horizontal1':
+                        result = 4
+                    case 'horizontal2':
+                        result = 3
+                    case 'horizontal3':
+                        result = 2
+                    case 'horizontal4':
+                        result = 1
+                    case 'question':
+                        result = '%'
+                    case 'square':
+                        result = 0
+                    case _:
+                        result = None
+                answers.append(result)
+
+                print(f"The symbol predicted is: {symbol}")
+            
+        sheet.append([result_id] + answers)
+        for col_index, answer in enumerate(answers, start=2):  # Starting from the 2nd column
+            if '%' in str(answer):  # Check if the answer contains '%'
+                cell = sheet.cell(row=sheet.max_row, column=col_index)
+                cell.fill = red_fill  # Set background color to red
+                cell.value = ""  # Set cell value to empty
 
 
 def predictID(img, selected_method, digits_models):
+    result = ""
     if (selected_method == "OCR"):
+        result = ocr_pytesseract_number_extraction_default(img)
         print ("OCR is not installed :(")
-        print(f"The ID predicted is: {ocr_pytesseract_number_extraction_default(img)}")
+        print(f"The ID predicted is: {result}")
+
     else:
-        show_images([img], ["img"])
+        # show_images([img], ["img"])
         id_contours_img = img.copy()
 
         blurred = cv2.GaussianBlur(img, (11, 11), 2)
@@ -276,7 +327,7 @@ def predictID(img, selected_method, digits_models):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
         closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
 
-        show_images([img, gray, blurred, edges, closed_edges], ['img', 'gray', 'blurred', 'edges', 'closed_edges'])
+        # show_images([img, gray, blurred, edges, closed_edges], ['img', 'gray', 'blurred', 'edges', 'closed_edges'])
 
         # edges = get_edges(img)
         # edges = borderTheImage(edges, 12, 12, 12, 12)
@@ -288,8 +339,7 @@ def predictID(img, selected_method, digits_models):
 
         id_contours = sorted(id_contours, key=lambda contour: cv2.boundingRect(contour)[0])
 
-        show_images([id_contours_img], ["id contours"])
-
+        # show_images([id_contours_img], ["id contours"])
 
         for i, contour in enumerate(id_contours):
             x, y, w, h = cv2.boundingRect(contour)
@@ -320,9 +370,12 @@ def predictID(img, selected_method, digits_models):
                 predicted_digit = 0
             print(f"The digit predicted is: {predicted_digit}")
 
+            result += str(predicted_digit)
+
             # Display the resulting image
-            show_images([result_img], [f"Digit {i+1}"])
-            show_images([digit_img], [f"Digit {i+1}"])
+            # show_images([result_img], [f"Digit {i+1}"])
+            # show_images([digit_img], [f"Digit {i+1}"])
+    return result
 
 
 ############################################# CLASSIFICATON FUNCTIONS ##################################
