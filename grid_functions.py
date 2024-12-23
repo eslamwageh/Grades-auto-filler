@@ -2,9 +2,9 @@ from commonfunctions import *
 from joblib import dump, load
 import pytesseract
 from openpyxl.styles import PatternFill
-import easyocr
+# import easyocr
 
-reader = easyocr.Reader(['en'])
+# reader = easyocr.Reader(['en'])
 
 
 def get_edges(image):
@@ -113,10 +113,10 @@ def showLines(full_paper, horizontal_lines, vertical_lines, lines, clustered = 0
             else:
                 x1, y1, x2, y2 = line
             cv2.line(output, (x1, y1), (x2, y2), (0, 255, 0), 10)
-    # if (clustered == 0):
-    #     show_images([horizontal, vertical, output], ["horizontal", "vertical", "lines"])
-    # else:
-    #     show_images([horizontal, vertical, output], ["clustered horizontal", "clustered vertical", "clustered lines"])
+    if (clustered == 0):
+        show_images([horizontal, vertical, output], ["horizontal", "vertical", "lines"])
+    else:
+        show_images([horizontal, vertical, output], ["clustered horizontal", "clustered vertical", "clustered lines"])
 
 def borderTheImage(image, top = 3, bottom = 3, right = 5, left = 2):
     # Fill the borders with ones
@@ -126,7 +126,7 @@ def borderTheImage(image, top = 3, bottom = 3, right = 5, left = 2):
     image[:, -right:] = 255  # Right border
     return image
 
-def cluster_lines(full_paper, lines, orientation='horizontal', threshold=10, shifting = 2):
+def cluster_lines(full_paper, lines, orientation='horizontal', threshold=10, shifting = 0):
     """
     Cluster lines that are close to each other.
 
@@ -207,7 +207,7 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
     print(f"Table has {num_rows} rows and {num_cols} columns.")
 
     cells = []
-
+    print(clustered_vertical[0])
     for i in range(num_rows):
         row_cells = []
         for j in range(num_cols):
@@ -219,10 +219,11 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
             x2 = clustered_vertical[j + 1][0]
             y2 = clustered_horizontal[i + 1][1]
             
+            print (x1, y1, x2, y2)
             # Crop the cell from the original image
             cell = full_paper[y1:y2, x1:x2]
             row_cells.append(cell)
-            #show_images([cell], [f"{i}, {j}"])
+            # show_images([cell], [f"{i}, {j}"])
         cells.append(row_cells)
     
     print(f"Extracted {len(cells) * len(cells[0])} cells.")
@@ -344,13 +345,15 @@ def predictID(img, selected_method, digits_models):
         
         edges = cv2.Canny(gray,60, 100)
 
-        edges[ : 15, :] = 0
-        edges[-15: , :] = 0
-        edges[:, :15] = 0
-        edges[:, -15:] = 0
+        edges[ : 18, :] = 0
+        edges[-18: , :] = 0
+        edges[:, :18] = 0
+        edges[:, -18:] = 0
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 20))
+        closed_edges = cv2.morphologyEx(closed_edges, cv2.MORPH_CLOSE, kernel, iterations=1)
 
         # show_images([img, gray, blurred, edges, closed_edges], ['img', 'gray', 'blurred', 'edges', 'closed_edges'])
 
@@ -364,10 +367,14 @@ def predictID(img, selected_method, digits_models):
 
         id_contours = sorted(id_contours, key=lambda contour: cv2.boundingRect(contour)[0])
 
-        show_images([id_contours_img], ["id contours"])
+        # show_images([id_contours_img], ["id contours"])
 
         for i, contour in enumerate(id_contours):
             x, y, w, h = cv2.boundingRect(contour)
+            area  = cv2.contourArea(contour)
+            print(f"area  = {area}")
+            if (area < 200):    
+                continue
 
             if (h < 1.5 * w):
                 digit_img1 = img[y:y+h, x:x+w//2]
@@ -451,13 +458,14 @@ def predict_symbol(img, symbols_models):
 
 
 def predict_digit(img, digits_models, selected_method):
+    # show_images([img], ['img'])
     if (selected_method == "OCR"):
         print ("OCR is not installed :(")
         return ocr_pytesseract_number_extraction_default(img);
     else:
         test_features=extract_hog_features(img)
         predicted_digit=digits_models['SVM'].predict([test_features])
-        predicted_digit_num = ord(predicted_digit[0].lower()) - ord('a') + 1
+        predicted_digit_num = predicted_digit[0]
     
     return predicted_digit_num
 
