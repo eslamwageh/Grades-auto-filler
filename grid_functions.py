@@ -318,7 +318,7 @@ def predictID(img, selected_method, digits_models):
         # show_images([img], ["img"])
         id_contours_img = img.copy()
 
-        blurred = cv2.GaussianBlur(img, (11, 11), 2)
+        blurred = cv2.GaussianBlur(img, (7, 7), 2)
         gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
         
         edges = cv2.Canny(gray,60, 100)
