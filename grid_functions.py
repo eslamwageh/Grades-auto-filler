@@ -303,6 +303,27 @@ def predictCells(cells, digits_models, symbols_models, selected_method, sheet):
                 cell.value = ""  # Set cell value to empty
 
 
+def preprocessIDDigit(digit_img):
+    # Find the brightest color in the image
+    brightest_color = digit_img[0, 0]  # Max across rows and columns for each channel
+
+    # Create a new blank image of size (70, 70) filled with the brightest color
+    result_img = np.full((70, 70, 3), brightest_color, dtype=np.uint8)
+
+    # Resize the digit image while maintaining its aspect ratio
+    digit_h, digit_w = digit_img.shape[:2]
+    scale = min(70 / digit_h, 70 / digit_w)
+    new_w, new_h = int(digit_w * scale), int(digit_h * scale)
+    resized_digit = cv2.resize(digit_img, (new_w, new_h))
+
+    # Calculate the offset to center the digit
+    x_offset = (70 - new_w) // 2
+    y_offset = (70 - new_h) // 2
+
+    # Place the resized digit in the center of the result image
+    result_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_digit
+    return result_img
+
 def predictID(img, selected_method, digits_models):
     result = ""
     if (selected_method == "OCR"):
@@ -333,45 +354,45 @@ def predictID(img, selected_method, digits_models):
         # edges = borderTheImage(edges, 12, 12, 12, 12)
 
         
-        id_contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        id_contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         # paper_rectContours = rectContour(paper_contours)
         cv2.drawContours(id_contours_img, id_contours, -1, (0, 255, 0), 1)
 
         id_contours = sorted(id_contours, key=lambda contour: cv2.boundingRect(contour)[0])
 
-        # show_images([id_contours_img], ["id contours"])
+        show_images([id_contours_img], ["id contours"])
 
         for i, contour in enumerate(id_contours):
             x, y, w, h = cv2.boundingRect(contour)
-            digit_img = img[y:y+h, x:x+w]
 
+            if (h < 1.5 * w):
+                digit_img1 = img[y:y+h, x:x+w//2]
+                digit_img2 = img[y:y+h, x+w//2:x+w]
 
-            # Find the brightest color in the image
-            brightest_color = digit_img[0, 0]  # Max across rows and columns for each channel
+                result_img = preprocessIDDigit(digit_img1)
+                predicted_digit = predict_digit(result_img, digits_models, selected_method)
+                if predicted_digit == 10:
+                    predicted_digit = 0
+                print(f"The digit predicted is: {predicted_digit}")
+                result += str(predicted_digit)
 
-            # Create a new blank image of size (70, 70) filled with the brightest color
-            result_img = np.full((70, 70, 3), brightest_color, dtype=np.uint8)
+                result_img = preprocessIDDigit(digit_img2)
+                predicted_digit = predict_digit(result_img, digits_models, selected_method)
+                if predicted_digit == 10:
+                    predicted_digit = 0
+                print(f"The digit predicted is: {predicted_digit}")
+                result += str(predicted_digit)
 
-            # Resize the digit image while maintaining its aspect ratio
-            digit_h, digit_w = digit_img.shape[:2]
-            scale = min(70 / digit_h, 70 / digit_w)
-            new_w, new_h = int(digit_w * scale), int(digit_h * scale)
-            resized_digit = cv2.resize(digit_img, (new_w, new_h))
+            else :
+                digit_img1 = img[y:y+h, x:x+w]
 
-            # Calculate the offset to center the digit
-            x_offset = (70 - new_w) // 2
-            y_offset = (70 - new_h) // 2
-
-            # Place the resized digit in the center of the result image
-            result_img[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized_digit
-
-            predicted_digit = predict_digit(result_img, digits_models, selected_method)
-            if predicted_digit == 10:
-                predicted_digit = 0
-            print(f"The digit predicted is: {predicted_digit}")
-
-            result += str(predicted_digit)
-
+                result_img = preprocessIDDigit(digit_img1)
+                predicted_digit = predict_digit(result_img, digits_models, selected_method)
+                if predicted_digit == 10:
+                    predicted_digit = 0
+                print(f"The digit predicted is: {predicted_digit}")
+                result += str(predicted_digit)
+            
             # Display the resulting image
             # show_images([result_img], [f"Digit {i+1}"])
             # show_images([digit_img], [f"Digit {i+1}"])
