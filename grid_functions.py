@@ -50,9 +50,9 @@ def getPerspective(img):
 
 
     # SHOWING THE IMAGES FOR CLARITY 
-    show_images([closed_edges], ['closed_edges'])
-    show_images([imgContours,imgCorners], ['imgContours','imgCorners'])
-    show_images([warped_img], ["warped"])
+    # show_images([closed_edges], ['closed_edges'])
+    # show_images([imgContours,imgCorners], ['imgContours','imgCorners'])
+    # show_images([warped_img], ["warped"])
     return warped_img
 
 def getLines(full_paper):
@@ -223,7 +223,7 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
             # Crop the cell from the original image
             cell = full_paper[y1:y2, x1:x2]
             row_cells.append(cell)
-            show_images([cell], [f"{i}, {j}"])
+            # show_images([cell], [f"{i}, {j}"])
         cells.append(row_cells)
     
     print(f"Extracted {len(cells) * len(cells[0])} cells.")
@@ -250,7 +250,7 @@ def predictCells(cells, digits_models, symbols_models, selected_method, sheet):
 
                 # Crop the image
                 cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
-                show_images([cropped_cell],["cropped cell"])
+                # show_images([cropped_cell],["cropped cell"])
                 current_answer = predict_digit(cropped_cell, digits_models, selected_method)
                 answers.append(current_answer)
 
@@ -263,7 +263,7 @@ def predictCells(cells, digits_models, symbols_models, selected_method, sheet):
 
                 # Crop the image
                 cropped_cell = row_cells[i][start_y:end_y, start_x:end_x]
-                show_images([cropped_cell],["cropped cell"])
+                # show_images([cropped_cell],["cropped cell"])
 
                 result = None
                 symbol = predict_symbol(cropped_cell, symbols_models)
@@ -337,7 +337,7 @@ def predictID(img, selected_method, digits_models):
         print(f"The ID predicted is: {result}")
 
     else:
-        show_images([img], ["img"])
+        # show_images([img], ["img"])
         id_contours_img = img.copy()
 
         blurred = cv2.GaussianBlur(img, (7, 7), 2)
@@ -355,7 +355,7 @@ def predictID(img, selected_method, digits_models):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 20))
         closed_edges = cv2.morphologyEx(closed_edges, cv2.MORPH_CLOSE, kernel, iterations=1)
 
-        show_images([img, gray, blurred, edges, closed_edges], ['img', 'gray', 'blurred', 'edges', 'closed_edges'])
+        # show_images([img, gray, blurred, edges, closed_edges], ['img', 'gray', 'blurred', 'edges', 'closed_edges'])
 
         # edges = get_edges(img)
         # edges = borderTheImage(edges, 12, 12, 12, 12)
@@ -405,7 +405,7 @@ def predictID(img, selected_method, digits_models):
                 result += str(predicted_digit)
             
             # Display the resulting image
-            show_images([result_img], [f"Digit {i+1}"])
+            # show_images([result_img], [f"Digit {i+1}"])
             # show_images([digit_img], [f"Digit {i+1}"])
     return result
 
