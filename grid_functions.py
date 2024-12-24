@@ -2,9 +2,9 @@ from commonfunctions import *
 from joblib import dump, load
 import pytesseract
 from openpyxl.styles import PatternFill
-# import easyocr
+import easyocr
 
-# reader = easyocr.Reader(['en'])
+reader = easyocr.Reader(['en'])
 
 
 def get_edges(image):
@@ -460,7 +460,7 @@ def predict_symbol(img, symbols_models):
 def predict_digit(img, digits_models, selected_method):
     # show_images([img], ['img'])
     if (selected_method == "OCR"):
-        print ("OCR is not installed :(")
+        # print ("OCR is not installed :(")
         return ocr_pytesseract_number_extraction_default(img);
     else:
         test_features=extract_hog_features(img)
@@ -486,10 +486,14 @@ def ocr_pytesseract_number_extraction_default(image):
     # Read text from an image
     result = reader.readtext(image)
 
-    # Print the extracted text
+    # Extract and combine detected text
+    extracted_numbers = ""
     for detection in result:
-        print(detection[1])
-    return detection[1]
+        text = detection[1]  # Extract detected text
+        print(text)  # Print detected text
+        extracted_numbers += text  # Append to result string
+
+    return extracted_numbers
 
 def ocr_pytesseract_number_extraction(img):
     show_images([img],['ocr digit image'])

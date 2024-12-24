@@ -113,7 +113,7 @@ class IntegratedApp:
                 results.append(f"Image {file_name} not found!")
 
         workbook.save("Bubble_Sheet_Student_Results.xlsx")
-        results.append(f"Overall accuracy: {accuracy / num_of_processed_files if num_of_processed_files else 0:.2f}")
+        # results.append(f"Overall accuracy: {accuracy / num_of_processed_files if num_of_processed_files else 0:.2f}")
         
         self.bubble_result.delete(1.0, tk.END)
         self.bubble_result.insert(tk.END, "\n".join(results))

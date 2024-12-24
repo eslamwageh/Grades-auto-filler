@@ -5,4 +5,5 @@ digits_dataset2
 digits_dataset
 digits_dataset2/
 symbols_dataset
-__pycache__
+__pycache__/*
+*.pyc
