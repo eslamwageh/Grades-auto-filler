@@ -313,16 +313,16 @@ def preprocessIDDigit(digit_img):
     brightest_color = digit_img[0, 0]  # Max across rows and columns for each channel
 
     # Create a new blank image of size (70, 70) filled with the brightest color
-    result_img = np.full((70, 70, 3), brightest_color, dtype=np.uint8)
+    result_img = np.full((70, 60, 3), brightest_color, dtype=np.uint8)
 
     # Resize the digit image while maintaining its aspect ratio
     digit_h, digit_w = digit_img.shape[:2]
-    scale = min(70 / digit_h, 70 / digit_w)
+    scale = min(70 / digit_h, 60 / digit_w)
     new_w, new_h = int(digit_w * scale), int(digit_h * scale)
     resized_digit = cv2.resize(digit_img, (new_w, new_h))
 
     # Calculate the offset to center the digit
-    x_offset = (70 - new_w) // 2
+    x_offset = (60 - new_w) // 2
     y_offset = (70 - new_h) // 2
 
     # Place the resized digit in the center of the result image
