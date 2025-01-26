@@ -1,4 +1,4 @@
-from grid_functions import *
+from grades_sheet_functions import *
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import openpyxl

@@ -3,7 +3,7 @@ from tkinter import filedialog, messagebox
 import cv2
 import openpyxl
 from openpyxl import Workbook
-from bubble import *
+from bubble_sheet import *
 from grades_sheet import *
 
 class IntegratedApp:
@@ -112,7 +112,7 @@ class IntegratedApp:
             else:
                 results.append(f"Image {file_name} not found!")
 
-        workbook.save("Bubble_Sheet_Student_Results.xlsx")
+        workbook.save("Bubble_Sheet_Students_Results.xlsx")
         # results.append(f"Overall accuracy: {accuracy / num_of_processed_files if num_of_processed_files else 0:.2f}")
         
         self.bubble_result.delete(1.0, tk.END)
@@ -141,7 +141,7 @@ class IntegratedApp:
             clustered_horizontal, clustered_vertical = getLines(full_paper)
             cells = extractCells(full_paper, clustered_horizontal, clustered_vertical)
             predictCells(cells, digits_models, symbols_models, selected_method, sheet)
-            workbook.save("Grades_Sheet.xlsx")
+            workbook.save("Grades_Sheet_Students_Results.xlsx")
             messagebox.showinfo("Success", f"Grades Sheet processed with {selected_method}. Results saved in Grades_Sheet.xlsx")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
