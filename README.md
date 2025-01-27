@@ -94,8 +94,8 @@ python GUI.py
 
 <table>
   <tr>
-    <td width=40% valign="center"><img src="https://raw.githubusercontent.com/eslamwageh/Grades-auto-filler/refs/heads/main/tests/grades_test1.jpg?token=GHSAT0AAAAAAC53FQC5M7DTKQU4LKYGOPV2Z4XVBWA"/></td>
-    <td width=40% valign="center"><img src="https://raw.githubusercontent.com/eslamwageh/Grades-auto-filler/refs/heads/main/tests/features%26classifier_result.png?token=GHSAT0AAAAAAC53FQC4YOVCYJZ5UAYIMXOAZ4XWEOQ"/></td>
+    <td width=40% valign="center"><img src="https://github.com/eslamwageh/Grades-auto-filler/blob/main/tests/grades_test1.jpg?raw=true"/></td>
+    <td width=40% valign="center"><img src="https://github.com/eslamwageh/Grades-auto-filler/blob/main/tests/features&classifier_result.png?raw=true"/></td>
   </tr>
 </table>
 
@@ -104,8 +104,8 @@ python GUI.py
 
 <table>
   <tr>
-    <td width=40% valign="center"><img src="https://raw.githubusercontent.com/eslamwageh/Grades-auto-filler/refs/heads/main/tests/grades_test1.jpg?token=GHSAT0AAAAAAC53FQC4IQP7M2FORWVJOJQMZ4XWHAQ"/></td>
-    <td width=40% valign="center"><img src="https://raw.githubusercontent.com/eslamwageh/Grades-auto-filler/refs/heads/main/tests/OCR_result.png?token=GHSAT0AAAAAAC53FQC4XQYDRGBP5IA7CH2YZ4XWHSA"/></td>
+    <td width=40% valign="center"><img src="https://github.com/eslamwageh/Grades-auto-filler/blob/main/tests/grades_test1.jpg?raw=true"/></td>
+    <td width=40% valign="center"><img src="https://github.com/eslamwageh/Grades-auto-filler/blob/main/tests/OCR_result.png?raw=true"/></td>
   </tr>
 </table>
 
@@ -162,10 +162,9 @@ python GUI.py
 ### <img  align= center width=50px src="https://i2.wp.com/www.rankred.com/wp-content/uploads/2019/07/AI-solves-Rubik-Cube.gif?fit=800%2C433&ssl=1">Demo Video<a id = "video_demo"></a>
 <br>
 
-[bubble sheet demo video.webm]()
+[demo_video.webm](https://raw.githubusercontent.com/eslamwageh/Grades-auto-filler/main/tests/demo_video.webm)
 
 <br>
-Backup link : <a href="https://www.youtube.com/watch?v=WZZoWZTEEj0"> Demo </a>
 
 ***
  
