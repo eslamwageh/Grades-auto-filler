@@ -162,7 +162,7 @@ python GUI.py
 ### <img  align= center width=50px src="https://i2.wp.com/www.rankred.com/wp-content/uploads/2019/07/AI-solves-Rubik-Cube.gif?fit=800%2C433&ssl=1">Demo Video<a id = "video_demo"></a>
 <br>
 
-[demo_video.webm](https://github.com/eslamwageh/Grades-auto-filler/blob/main/tests/demo_video.webm?raw=true)
+[demo_video.mp4](https://github.com/eslamwageh/Grades-auto-filler/blob/main/tests/demo_video.mp4?raw=true)
 
 <br>
 
