@@ -1,0 +1,13 @@
+opencv-python
+scikit-image
+matplotlib
+numpy
+scipy
+pytesseract
+easyocr
+openpyxl
+joblib
+ipywidgets
+pillow
+scikit-learn
+torch
