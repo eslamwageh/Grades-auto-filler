@@ -6,5 +6,4 @@ digits_dataset
 digits_dataset2/
 symbols_dataset
 __pycache__/*
-*.pyc
 __pycache__/
