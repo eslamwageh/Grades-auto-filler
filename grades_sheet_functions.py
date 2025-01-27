@@ -204,10 +204,10 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
     num_rows = len(clustered_horizontal) - 1
     num_cols = len(clustered_vertical) - 1
 
-    print(f"Table has {num_rows} rows and {num_cols} columns.")
+    # print(f"Table has {num_rows} rows and {num_cols} columns.")
 
     cells = []
-    print(clustered_vertical[0])
+    # print(clustered_vertical[0])
     for i in range(num_rows):
         row_cells = []
         for j in range(num_cols):
@@ -219,14 +219,14 @@ def extractCells(full_paper, clustered_horizontal, clustered_vertical):
             x2 = clustered_vertical[j + 1][0]
             y2 = clustered_horizontal[i + 1][1]
             
-            print (x1, y1, x2, y2)
+            # print (x1, y1, x2, y2)
             # Crop the cell from the original image
             cell = full_paper[y1:y2, x1:x2]
             row_cells.append(cell)
             # show_images([cell], [f"{i}, {j}"])
         cells.append(row_cells)
     
-    print(f"Extracted {len(cells) * len(cells[0])} cells.")
+    # print(f"Extracted {len(cells) * len(cells[0])} cells.")
     return cells
     
 
@@ -254,7 +254,7 @@ def predictCells(cells, digits_models, symbols_models, selected_method, sheet):
                 current_answer = predict_digit(cropped_cell, digits_models, selected_method)
                 answers.append(current_answer)
 
-                print(f"The digit predicted is: {predict_digit(cropped_cell, digits_models, selected_method)}")
+                # print(f"The digit predicted is: {predict_digit(cropped_cell, digits_models, selected_method)}")
             elif (i > 3):
                 start_x = (width - 250) // 2
                 start_y = (height - 150) // 2
@@ -298,7 +298,7 @@ def predictCells(cells, digits_models, symbols_models, selected_method, sheet):
                         result = None
                 answers.append(result)
 
-                print(f"The symbol predicted is: {symbol}")
+                # print(f"The symbol predicted is: {symbol}")
             
         sheet.append([result_id] + answers)
         for col_index, answer in enumerate(answers, start=2):  # Starting from the 2nd column
@@ -334,7 +334,7 @@ def predictID(img, selected_method, digits_models):
     if (selected_method == "OCR"):
         result = ocr_pytesseract_number_extraction_default(img)
         # print ("OCR is not installed :(")
-        print(f"The ID predicted is: {result}")
+        # print(f"The ID predicted is: {result}")
 
     else:
         # show_images([img], ["img"])
@@ -372,7 +372,7 @@ def predictID(img, selected_method, digits_models):
         for i, contour in enumerate(id_contours):
             x, y, w, h = cv2.boundingRect(contour)
             area  = cv2.contourArea(contour)
-            print(f"area  = {area}")
+            # print(f"area  = {area}")
             if (area < 200):    
                 continue
 
@@ -384,14 +384,14 @@ def predictID(img, selected_method, digits_models):
                 predicted_digit = predict_digit(result_img, digits_models, selected_method)
                 if predicted_digit == 10:
                     predicted_digit = 0
-                print(f"The digit predicted is: {predicted_digit}")
+                # print(f"The digit predicted is: {predicted_digit}")
                 result += str(predicted_digit)
 
                 result_img = preprocessIDDigit(digit_img2)
                 predicted_digit = predict_digit(result_img, digits_models, selected_method)
                 if predicted_digit == 10:
                     predicted_digit = 0
-                print(f"The digit predicted is: {predicted_digit}")
+                # print(f"The digit predicted is: {predicted_digit}")
                 result += str(predicted_digit)
 
             else :
@@ -401,7 +401,7 @@ def predictID(img, selected_method, digits_models):
                 predicted_digit = predict_digit(result_img, digits_models, selected_method)
                 if predicted_digit == 10:
                     predicted_digit = 0
-                print(f"The digit predicted is: {predicted_digit}")
+                # print(f"The digit predicted is: {predicted_digit}")
                 result += str(predicted_digit)
             
             # Display the resulting image
@@ -490,7 +490,7 @@ def ocr_pytesseract_number_extraction_default(image):
     extracted_numbers = ""
     for detection in result:
         text = detection[1]  # Extract detected text
-        print(text)  # Print detected text
+        # print(text)  # Print detected text
         extracted_numbers += text  # Append to result string
 
     return extracted_numbers

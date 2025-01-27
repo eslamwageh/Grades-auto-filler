@@ -17,7 +17,7 @@ sheet.append(["ID"] + [f"Q{i+1}" for i in range(100)])
 def program(selected_method = 'Features + Classifier'):
     img = cv2.imread('start.jpg')
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    print(img.shape)
+    # print(img.shape)
     img = cv2.resize(img, (3000, 3000))
     full_paper = getPerspective(img)
     full_paper = full_paper[100:, :]
